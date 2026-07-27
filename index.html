@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>사주 분석 & 맞춤 굿즈 추천</title>
+<script src="./ssaju.bundle.js"></script>
+<style>
+  :root {
+    --ink: #2b2320;
+    --paper: #fffaf3;
+    --accent: #a8452f;
+    --accent-soft: #f3e2d8;
+    --line: #e6d9cb;
+    font-family: -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 480px; margin: 0 auto; }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  .sub { color: #7a6f63; font-size: 13px; margin-bottom: 20px; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .card h2 {
+    font-size: 15px;
+    margin: 0 0 10px;
+    color: var(--accent);
+  }
+  label { display: block; font-size: 12px; color: #7a6f63; margin-bottom: 4px; }
+  .row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .row > div { flex: 1; }
+  select, input {
+    width: 100%;
+    padding: 9px 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: var(--ink);
+  }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    flex: 1;
+    border: none;
+    background: #fff;
+    padding: 9px 0;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .seg button.active { background: var(--accent); color: #fff; }
+  .submit {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .submit:active { opacity: 0.85; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+  th, td { padding: 6px 4px; border-bottom: 1px solid var(--line); }
+  th { color: #7a6f63; font-weight: 500; }
+  .hanja { font-size: 15px; font-weight: 700; }
+  .tag {
+    display: inline-block;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    margin: 2px 3px 2px 0;
+  }
+  .bars { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .bar-row .label { width: 34px; color: #7a6f63; }
+  .bar-track { flex: 1; height: 10px; background: var(--accent-soft); border-radius: 6px; overflow: hidden; }
+  .bar-fill { height: 100%; background: var(--accent); }
+  .bar-row .count { width: 18px; text-align: right; color: #7a6f63; }
+  .interp { font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+  .daeun-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .daeun-chip {
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 8px 10px;
+    text-align: center;
+    font-size: 11px;
+    min-width: 56px;
+  }
+  .daeun-chip.current { border-color: var(--accent); background: var(--accent-soft); }
+  .daeun-chip .hanja { display: block; font-size: 14px; margin: 3px 0; }
+  .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .product-card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 12px;
+  }
+  .product-card .thumb {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    background: var(--accent-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+  .product-card .name { font-weight: 600; margin-bottom: 2px; }
+  .product-card .price { color: var(--accent); font-weight: 600; }
+  .product-card .why { color: #7a6f63; margin-top: 4px; }
+  .note { font-size: 11px; color: #a89b8c; margin-top: 10px; line-height: 1.5; }
+  #result { display: none; }
+  .qa-disclaimer { font-size: 11px; color: #a89b8c; line-height: 1.5; background: #f7f1e8; border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; }
+  .qa-thread { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .qa-q { align-self: flex-end; background: var(--accent); color: #fff; border-radius: 12px 12px 2px 12px; padding: 8px 12px; font-size: 13px; max-width: 85%; }
+  .qa-a { align-self: flex-start; background: var(--accent-soft); color: var(--ink); border-radius: 12px 12px 12px 2px; padding: 8px 12px; font-size: 13px; max-width: 85%; line-height: 1.5; }
+  .qa-input-row { display: flex; gap: 8px; }
+  .qa-input-row input { flex: 1; }
+  .qa-ask-btn { padding: 0 16px; border: none; border-radius: 8px; background: var(--accent); color: #fff; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .qa-paywall { border: 1px dashed var(--line); border-radius: 10px; padding: 14px; text-align: center; }
+  .qa-paywall .price { font-size: 15px; font-weight: 700; color: var(--accent); margin: 4px 0 10px; }
+  .qa-paywall button { padding: 10px 20px; border: none; border-radius: 8px; background: var(--accent); color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🔮 사주 분석 &amp; 맞춤 굿즈 추천</h1>
+  <div class="sub">생년월일시를 입력하면 만세력 기반으로 사주를 분석하고, 어울리는 굿즈를 추천해드려요.</div>
+
+  <div class="card">
+    <h2>정보 입력</h2>
+    <form id="sajuForm">
+      <div class="row">
+        <div>
+          <label>이름 / 닉네임 (선택)</label>
+          <input type="text" id="name" placeholder="예: 홍길동" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>연도</label>
+          <select id="year"></select>
+        </div>
+        <div>
+          <label>월</label>
+          <select id="month"></select>
+        </div>
+        <div>
+          <label>일</label>
+          <select id="day"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>시</label>
+          <select id="hour"></select>
+        </div>
+        <div>
+          <label>분</label>
+          <select id="minute"></select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label>성별</label>
+          <div class="seg" id="genderSeg">
+            <button type="button" data-val="남" class="active">남</button>
+            <button type="button" data-val="여">여</button>
+          </div>
+        </div>
+        <div>
+          <label>양/음력</label>
+          <div class="seg" id="calSeg">
+            <button type="button" data-val="solar" class="active">양력</button>
+            <button type="button" data-val="lunar">음력</button>
+          </div>
+        </div>
+      </div>
+      <button type="submit" class="submit">내 사주 보기</button>
+    </form>
+  </div>
+
+  <div id="result">
+    <div class="card">
+      <h2>기본 정보</h2>
+      <div id="basicInfo"></div>
+    </div>
+
+    <div class="card">
+      <h2>사주 원국</h2>
+      <table id="pillarTable"></table>
+    </div>
+
+    <div class="card">
+      <h2>오행 분포</h2>
+      <div class="bars" id="fiveBars"></div>
+    </div>
+
+    <div class="card">
+      <h2>십성 &amp; 12운성 &amp; 신살</h2>
+      <table id="sipseongTable"></table>
+    </div>
+
+    <div class="card">
+      <h2>격국 · 용신 · 강약</h2>
+      <div id="advancedInfo"></div>
+      <div class="interp" id="interp"></div>
+    </div>
+
+    <div class="card">
+      <h2>대운 흐름</h2>
+      <div class="daeun-scroll" id="daeunScroll"></div>
+    </div>
+
+    <div class="card">
+      <h2>🎁 평생 기본 아이템</h2>
+      <div class="note" style="margin-top:0">태어난 사주(원국)의 용신 기준 — 한 번 마련해두고 오래 쓰는 아이템</div>
+      <div class="product-grid" id="baseProductGrid"></div>
+    </div>
+
+    <div class="card">
+      <h2>⏳ 지금 대운 시기 아이템</h2>
+      <div class="note" style="margin-top:0" id="daeunNote"></div>
+      <div class="product-grid" id="seasonalProductGrid"></div>
+      <div class="note">
+        ※ 지금은 샘플 상품으로 추천 로직을 보여드리는 화면입니다. 카페24 스토어 연동 후에는
+        실제 등록된 상품 중에서 추천하도록 자동으로 바뀝니다.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💬 더 궁금한 점 물어보기</h2>
+      <div class="qa-disclaimer">
+        이 답변은 명리학 참고 정보이며, 의학·법률·투자 등 중요한 결정을 대신하지 않습니다.
+        중요한 판단은 반드시 전문가와 상담하세요. 첫 질문은 무료이고, 이후 질문은 유료로 전환됩니다.
+      </div>
+      <div class="qa-thread" id="qaThread"></div>
+      <div id="qaInputArea">
+        <div class="qa-input-row">
+          <input type="text" id="qaInput" placeholder="예: 올해 재물운은 어떤가요?" />
+          <button type="button" class="qa-ask-btn" id="qaAskBtn">질문하기</button>
+        </div>
+      </div>
+      <div id="qaPaywall" class="qa-paywall" style="display:none">
+        <div>무료 질문을 모두 사용했어요.</div>
+        <div class="price">1건 결제하고 계속 질문하기 — 1,000원</div>
+        <button type="button" id="qaPayBtn">결제하고 질문 이어가기</button>
+        <div class="note">※ 프로토타입 화면입니다. 실제 결제는 카페24 PG 연동 후 연결됩니다.</div>
+      </div>
+
+      <div style="border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px;">
+        <div style="font-weight:600; font-size:13px; margin-bottom:6px;">🔎 훨씬 더 자세한 답변이 필요하다면</div>
+        <div class="note" style="margin-top:0">
+          제 사주 데이터를 복사해서 ChatGPT나 Gemini에 직접 붙여넣으면, 훨씬 길고 자세한 해설을
+          무료로 받아볼 수 있어요. (k-fortune 같은 사이트들이 쓰는 방식이에요 — AI 비용이 들지 않아요.)
+        </div>
+        <div class="qa-input-row" style="margin-top:8px">
+          <button type="button" class="qa-ask-btn" id="qaCopyBtn" style="flex:1">📋 사주 내용 복사하기</button>
+        </div>
+        <div class="qa-input-row" style="margin-top:8px">
+          <button type="button" class="qa-ask-btn" id="qaOpenChatgptBtn" style="flex:1; background:#10a37f;">ChatGPT 열기 ↗</button>
+          <button type="button" class="qa-ask-btn" id="qaOpenGeminiBtn" style="flex:1; background:#4285f4;">Gemini 열기 ↗</button>
+        </div>
+        <div class="note" id="qaCopyStatus"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- 오행 매핑 (천간/지지 한자 -> 오행) ----------
+const STEM_ELEMENT = {
+  "甲": "목", "乙": "목",
+  "丙": "화", "丁": "화",
+  "戊": "토", "己": "토",
+  "庚": "금", "辛": "금",
+  "壬": "수", "癸": "수",
+};
+const BRANCH_ELEMENT = {
+  "子": "수", "丑": "토", "寅": "목", "卯": "목",
+  "辰": "토", "巳": "화", "午": "화", "未": "토",
+  "申": "금", "酉": "금", "戌": "토", "亥": "수",
+};
+
+// ---------- 샘플 굿즈 카탈로그 (TODO: 카페24 Open API 연동 시 이 배열을 실제 상품 목록으로 교체) ----------
+const SAMPLE_PRODUCTS = [
+  { name: "목(木) 원목 팔찌", ohang: "목", category: "팔찌", price: 28000, emoji: "🌳" },
+  { name: "화(火) 레드 캔들", ohang: "화", category: "양초", price: 19000, emoji: "🔥" },
+  { name: "토(土) 도자기 찻잔", ohang: "토", category: "찻잔", price: 32000, emoji: "🏺" },
+  { name: "금(金) 실버 팔찌", ohang: "금", category: "팔찌", price: 45000, emoji: "⚪" },
+  { name: "수(水) 블루 텀블러", ohang: "수", category: "텀블러", price: 24000, emoji: "💧" },
+  { name: "목(木) 우드 인센스", ohang: "목", category: "소품", price: 15000, emoji: "🪵" },
+  { name: "화(火) 오렌지 스카프", ohang: "화", category: "의류", price: 38000, emoji: "🧣" },
+  { name: "수(水) 네이비 파우치", ohang: "수", category: "소품", price: 21000, emoji: "👜" },
+];
+
+// 평생 기본 라인업: 원국(태어난 사주)의 용신·부족 오행 기준 — 한 번 사면 계속 쓰는 상품
+function recommendBaseProducts(result) {
+  const yongsinElements = new Set((result.advanced.yongsin || []).map((s) => STEM_ELEMENT[s]).filter(Boolean));
+  const lackingElements = new Set(
+    Object.entries(result.fiveElements).filter(([, count]) => count === 0).map(([el]) => el)
+  );
+
+  const scored = SAMPLE_PRODUCTS.map((p) => {
+    let score = 0;
+    let reasons = [];
+    if (yongsinElements.has(p.ohang)) { score += 2; reasons.push("평생 용신(" + p.ohang + ") 보강"); }
+    if (lackingElements.has(p.ohang)) { score += 1; reasons.push("부족한 오행(" + p.ohang + ") 보완"); }
+    if (reasons.length === 0) reasons.push("오행 균형 유지");
+    return { ...p, score, reason: reasons.join(" · ") };
+  });
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, 2);
+}
+
+// 시기 보완 라인업: 지금 지나가고 있는 대운(10년 단위 운세)의 오행 기준 — 대운이 바뀔 때마다 다시 추천이 바뀜
+function recommendSeasonalProducts(result, excludeNames) {
+  const current = result.daeun && result.daeun.current;
+  if (!current) return [];
+  const daeunElements = new Set(
+    [STEM_ELEMENT[current.stem], BRANCH_ELEMENT[current.branch]].filter(Boolean)
+  );
+  const yongsinElements = new Set((result.advanced.yongsin || []).map((s) => STEM_ELEMENT[s]).filter(Boolean));
+
+  const scored = SAMPLE_PRODUCTS
+    .filter((p) => !excludeNames.has(p.name))
+    .map((p) => {
+      let score = 0;
+      let reasons = [];
+      // 지금 대운 오행과 용신이 겹치면: "지금이 이 기운을 살리기 좋은 시기"
+      if (daeunElements.has(p.ohang) && yongsinElements.has(p.ohang)) {
+        score += 2;
+        reasons.push("지금 대운(" + current.ganzhi + ")과 용신이 같은 " + p.ohang + " 기운이라 특히 잘 맞는 시기");
+      } else if (daeunElements.has(p.ohang)) {
+        score += 1;
+        reasons.push("지금 대운(" + current.ganzhi + ")의 " + p.ohang + " 기운과 어울림");
+      }
+      return { ...p, score, reason: reasons.join(" · ") };
+    })
+    .filter((p) => p.score > 0);
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, 2);
+}
+
+// ---------- 사주 Q&A (1건 무료, 이후 유료) ----------
+// TODO(백엔드 연동 시): 아래 SYSTEM_PROMPT + result.toCompact() + 사용자 질문을 실제 LLM API
+// (예: Claude API)를 호출하는 백엔드 함수로 보내고, 그 응답을 그대로 표시하면 됩니다.
+// API 키는 절대 이 프론트엔드 파일에 넣지 마세요 — 반드시 서버(백엔드 함수) 쪽에서만 보관/호출합니다.
+const SAJU_QA_SYSTEM_PROMPT = `당신은 사주(명리학) 상담 도우미입니다. 아래 제공된 사주 분석 데이터에 근거해서만
+고객의 질문에 답변하세요.
+
+규칙:
+1. 제공된 사주 데이터(원국, 오행, 용신, 대운 등)에 근거해서만 답하고, 데이터에 없는 내용을 지어내지 마세요.
+2. 단정적인 예언("반드시 ~합니다")을 피하고, 경향성/참고 정보로 표현하세요.
+3. 건강, 법률, 투자·대출 등 중대한 재정적 결정에 대해서는 구체적인 지시를 하지 말고 전문가 상담을 권유하세요.
+4. 답변은 3~5문장 이내로 간결하게 작성하세요.
+5. 과도하게 부정적이거나 불안을 조장하는 표현은 피하고, 항상 참고용 정보임을 인지시키는 톤을 유지하세요.
+6. 고객의 실명, 연락처 등 개인정보를 요구하거나 저장하지 마세요.`;
+
+let lastSajuResult = null;
+let qaFreeQuestionsRemaining = 1;
+
+// 백엔드 연동 전 데모용 임시 답변 로직 (실제 서비스에서는 SAJU_QA_SYSTEM_PROMPT를 쓰는 LLM 호출로 교체)
+function mockSajuAnswer(question, result) {
+  const q = question.toLowerCase();
+  const yongsinKo = (result.advanced.yongsin || []).map((s) => STEM_ELEMENT[s]).filter(Boolean);
+  const yongsinText = yongsinKo.length ? yongsinKo.join(", ") : "오행 균형";
+  const daeunGanzhi = result.daeun && result.daeun.current ? result.daeun.current.ganzhi : null;
+
+  if (/재물|돈|투자|재테크/.test(q)) {
+    return "재물운은 용신(" + yongsinText + ") 기운이 잘 살아날 때 흐름이 좋아지는 경향이 있어요. 다만 투자나 대출 같은 중요한 재정적 결정은 이 정보만으로 판단하지 마시고 전문가와 상담해보시는 걸 권해요.";
+  }
+  if (/연애|애정|결혼|궁합/.test(q)) {
+    return "애정운은 사주의 관성·재성 흐름과 관련이 깊은데, 지금 대운(" + (daeunGanzhi || "-") + ") 흐름을 함께 보면 참고가 돼요. 구체적인 시기는 개인마다 차이가 커서, 상세 상담을 통해 더 정확히 볼 수 있어요.";
+  }
+  if (/건강/.test(q)) {
+    return "사주로 보는 건강운은 오행 균형의 경향성 정도로 참고하시면 좋아요. 실제 건강 문제는 반드시 의료 전문가와 상담해주세요. 이 답변은 의학적 조언이 아니에요.";
+  }
+  if (/직장|이직|사업|일/.test(q)) {
+    return "직장·사업운은 격국(" + result.advanced.geukguk + ") 구조와 관련이 있어요. 지금 대운(" + (daeunGanzhi || "-") + ") 시기의 흐름도 함께 참고하시면 좋아요.";
+  }
+  return "말씀하신 부분은 일간 강약과 용신(" + yongsinText + ") 흐름을 참고해서 볼 수 있어요. 좀 더 구체적으로 여쭤보시면 더 자세히 답변드릴게요. (이 답변은 참고용이며 전문 상담을 대체하지 않아요.)";
+}
+
+function appendQaBubble(kind, text) {
+  const div = document.createElement("div");
+  div.className = kind === "q" ? "qa-q" : "qa-a";
+  div.textContent = text;
+  document.getElementById("qaThread").appendChild(div);
+}
+
+document.getElementById("qaAskBtn").addEventListener("click", () => {
+  const input = document.getElementById("qaInput");
+  const question = input.value.trim();
+  if (!question || !lastSajuResult) return;
+  if (qaFreeQuestionsRemaining <= 0) {
+    document.getElementById("qaInputArea").style.display = "none";
+    document.getElementById("qaPaywall").style.display = "block";
+    return;
+  }
+  appendQaBubble("q", question);
+  appendQaBubble("a", mockSajuAnswer(question, lastSajuResult));
+  input.value = "";
+  qaFreeQuestionsRemaining -= 1;
+  if (qaFreeQuestionsRemaining <= 0) {
+    document.getElementById("qaInputArea").style.display = "none";
+    document.getElementById("qaPaywall").style.display = "block";
+  }
+});
+
+function buildChatgptPrompt() {
+  if (!lastSajuResult) return "";
+  const question = document.getElementById("qaInput").value.trim();
+  const askPart = question
+    ? "특히 이 질문에 대해 자세히 답해주세요: " + question
+    : "제 사주 전체를 항목별로 자세하고 친절하게 해설해주세요 (성격, 재물운, 애정운, 직업운, 건강운, 대운 흐름 순서로요).";
+  return (
+    "다음은 제 사주(명리학) 만세력 분석 데이터입니다. 이 데이터를 참고해서 " + askPart + "\n\n" +
+    lastSajuResult.toCompact()
+  );
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (err) {
+    // 클립보드 API를 못 쓰는 환경(예: 권한 제한)을 위한 대체 방법
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    } catch (err2) {
+      return false;
+    }
+  }
+}
+
+document.getElementById("qaCopyBtn").addEventListener("click", async () => {
+  if (!lastSajuResult) return;
+  const ok = await copyToClipboard(buildChatgptPrompt());
+  document.getElementById("qaCopyStatus").textContent = ok
+    ? "복사됐어요! ChatGPT나 Gemini 채팅창에 붙여넣기(Ctrl+V / Cmd+V) 하시면 돼요."
+    : "복사에 실패했어요. 브라우저 클립보드 권한을 확인해주세요.";
+});
+document.getElementById("qaOpenChatgptBtn").addEventListener("click", () => {
+  window.open("https://chat.openai.com/", "_blank");
+});
+document.getElementById("qaOpenGeminiBtn").addEventListener("click", () => {
+  window.open("https://gemini.google.com/", "_blank");
+});
+
+document.getElementById("qaPayBtn").addEventListener("click", () => {
+  // 프로토타입: 실제로는 여기서 카페24/PG 결제 흐름을 연결하고, 성공 시에만 질문권을 지급합니다.
+  qaFreeQuestionsRemaining = 1;
+  document.getElementById("qaPaywall").style.display = "none";
+  document.getElementById("qaInputArea").style.display = "block";
+});
+
+// ---------- select 옵션 채우기 ----------
+function fillSelect(el, from, to, pad) {
+  el.innerHTML = "";
+  for (let i = from; i <= to; i++) {
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = pad ? String(i).padStart(2, "0") : i;
+    el.appendChild(opt);
+  }
+}
+const yearSel = document.getElementById("year");
+const monthSel = document.getElementById("month");
+const daySel = document.getElementById("day");
+const hourSel = document.getElementById("hour");
+const minuteSel = document.getElementById("minute");
+fillSelect(yearSel, 1940, 2026, false);
+yearSel.value = 1995;
+fillSelect(monthSel, 1, 12, false);
+fillSelect(daySel, 1, 31, false);
+fillSelect(hourSel, 0, 23, true);
+fillSelect(minuteSel, 0, 59, true);
+
+// ---------- 세그먼트 버튼 ----------
+function setupSeg(id) {
+  const seg = document.getElementById(id);
+  seg.querySelectorAll("button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      seg.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+    });
+  });
+}
+setupSeg("genderSeg");
+setupSeg("calSeg");
+function segValue(id) {
+  return document.querySelector("#" + id + " button.active").dataset.val;
+}
+
+// ---------- 렌더링 ----------
+function renderPillarTable(pillars, details) {
+  const rows = ["hour", "day", "month", "year"];
+  const labelKo = { hour: "시주", day: "일주", month: "월주", year: "연주" };
+  let html = "<tr><th></th>" + rows.map((r) => "<th>" + labelKo[r] + "</th>").join("") + "</tr>";
+  html += "<tr><th>천간</th>" + rows.map((r) => {
+    const d = details[r];
+    return "<td class='hanja'>" + d.stem + "<br><span style='font-size:10px;color:#7a6f63'>" + d.stemKo + " · " + d.element.stem + "</span></td>";
+  }).join("") + "</tr>";
+  html += "<tr><th>지지</th>" + rows.map((r) => {
+    const d = details[r];
+    return "<td class='hanja'>" + d.branch + "<br><span style='font-size:10px;color:#7a6f63'>" + d.branchKo + " · " + d.element.branch + "</span></td>";
+  }).join("") + "</tr>";
+  document.getElementById("pillarTable").innerHTML = html;
+}
+
+function renderFiveBars(fiveElements) {
+  const max = Math.max(...Object.values(fiveElements), 1);
+  const order = ["목", "화", "토", "금", "수"];
+  const html = order.map((el) => {
+    const count = fiveElements[el] || 0;
+    const pct = Math.round((count / max) * 100);
+    return (
+      "<div class='bar-row'><div class='label'>" + el + "</div>" +
+      "<div class='bar-track'><div class='bar-fill' style='width:" + pct + "%'></div></div>" +
+      "<div class='count'>" + count + "</div></div>"
+    );
+  }).join("");
+  document.getElementById("fiveBars").innerHTML = html;
+}
+
+function renderSipseongTable(tenGods, stages12, sals) {
+  const rows = ["hour", "day", "month", "year"];
+  const labelKo = { hour: "시주", day: "일주", month: "월주", year: "연주" };
+  let html = "<tr><th></th>" + rows.map((r) => "<th>" + labelKo[r] + "</th>").join("") + "</tr>";
+  html += "<tr><th>천간십성</th>" + rows.map((r) => "<td>" + (tenGods[r] && tenGods[r].stem ? tenGods[r].stem : "-") + "</td>").join("") + "</tr>";
+  html += "<tr><th>지지십성</th>" + rows.map((r) => "<td>" + (tenGods[r] && tenGods[r].branch ? tenGods[r].branch : "-") + "</td>").join("") + "</tr>";
+  const bong = (stages12 && stages12.bong) || {};
+  html += "<tr><th>12운성</th>" + rows.map((r) => "<td>" + (bong[r] || "-") + "</td>").join("") + "</tr>";
+  html += "<tr><th>신살</th>" + rows.map((r) => {
+    const s = sals[r];
+    if (!s) return "<td>-</td>";
+    const list = [s.twelveSal, ...(s.specialSals || [])].filter(Boolean);
+    return "<td>" + (list.join("<br>") || "-") + "</td>";
+  }).join("") + "</tr>";
+  document.getElementById("sipseongTable").innerHTML = html;
+}
+
+function renderDaeun(daeun) {
+  const list = daeun && Array.isArray(daeun.list) ? daeun.list : [];
+  const currentStartAge = daeun && daeun.current ? daeun.current.startAge : null;
+  const html = list.map((d) => {
+    const isCurrent = d.startAge === currentStartAge;
+    return (
+      "<div class='daeun-chip" + (isCurrent ? " current" : "") + "'>" +
+      d.startAge + "세" +
+      "<span class='hanja'>" + d.ganzhi + "</span>" +
+      "</div>"
+    );
+  }).join("");
+  document.getElementById("daeunScroll").innerHTML = html || "<div class='note'>대운 정보 없음</div>";
+}
+
+function renderProducts(targetId, products, emptyMessage) {
+  const html = products.map((p) => (
+    "<div class='product-card'>" +
+    "<div class='thumb'>" + p.emoji + "</div>" +
+    "<div class='name'>" + p.name + "</div>" +
+    "<div class='price'>" + p.price.toLocaleString() + "원</div>" +
+    "<div class='why'>" + p.reason + "</div>" +
+    "</div>"
+  )).join("");
+  document.getElementById(targetId).innerHTML = html || "<div class='note'>" + (emptyMessage || "추천 결과 없음") + "</div>";
+}
+
+document.getElementById("sajuForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const input = {
+    year: Number(yearSel.value),
+    month: Number(monthSel.value),
+    day: Number(daySel.value),
+    hour: Number(hourSel.value),
+    minute: Number(minuteSel.value),
+    gender: segValue("genderSeg"),
+    calendar: segValue("calSeg"),
+    // 진태양시(실제 태양시) 보정: 한국표준시(KST, 동경 135도)와 실제 서울 경도(약 127도)의
+    // 시차(약 30분)를 반영해 정통 만세력 앱들과 동일한 방식으로 시주/일주를 계산합니다.
+    applyLocalMeanTime: true,
+  };
+
+  let result;
+  try {
+    result = window.Ssaju.calculateSaju(input);
+  } catch (err) {
+    alert("사주 계산 중 오류가 발생했어요: " + err.message);
+    return;
+  }
+
+  // 기본 정보
+  document.getElementById("basicInfo").innerHTML =
+    "<div>일간: <span class='tag'>" + result.dayStem + " (" + result.pillarDetails.day.stemKo + result.pillarDetails.day.element.stem + ")</span></div>" +
+    "<div style='margin-top:6px'>공망: <span class='tag'>" + (result.gongmang.branches || []).join(", ") + "</span></div>";
+
+  renderPillarTable(result.pillars, result.pillarDetails);
+  renderFiveBars(result.fiveElements);
+  renderSipseongTable(result.tenGods, result.stages12, result.sals);
+
+  const STRENGTH_KO = { strong: "강함", weak: "약함", balanced: "중화" };
+  const yongsinKo = (result.advanced.yongsin || []).map((s) => s + "(" + (STEM_ELEMENT[s] || "?") + ")").join(", ");
+  const strengthKo = STRENGTH_KO[result.advanced.dayStrength.strength] || result.advanced.dayStrength.strength;
+  document.getElementById("advancedInfo").innerHTML =
+    "<div>격국: <span class='tag'>" + result.advanced.geukguk + "</span></div>" +
+    "<div style='margin-top:6px'>일간 강약: <span class='tag'>" + strengthKo + " (" + result.advanced.dayStrength.score + ")</span></div>" +
+    "<div style='margin-top:6px'>용신: <span class='tag'>" + yongsinKo + "</span></div>";
+  document.getElementById("interp").textContent = result.advanced.interpretation || "";
+
+  renderDaeun(result.daeun);
+
+  const baseProducts = recommendBaseProducts(result);
+  renderProducts("baseProductGrid", baseProducts, "추천 결과 없음");
+
+  const seasonalProducts = recommendSeasonalProducts(result, new Set(baseProducts.map((p) => p.name)));
+  renderProducts("seasonalProductGrid", seasonalProducts, "지금 대운과 특별히 겹치는 추천 상품이 없어요 (평생 기본 아이템으로 충분한 시기)");
+
+  const daeunNoteEl = document.getElementById("daeunNote");
+  if (result.daeun && result.daeun.current) {
+    const c = result.daeun.current;
+    daeunNoteEl.textContent = "현재 대운 " + c.ganzhi + " (" + c.startAge + "~" + c.endAge + "세) 기준 — 10년마다 이 추천이 새로 바뀝니다.";
+  } else {
+    daeunNoteEl.textContent = "";
+  }
+
+  // Q&A 상태 초기화 (새 사주 조회마다 무료 질문권 리셋)
+  lastSajuResult = result;
+  qaFreeQuestionsRemaining = 1;
+  document.getElementById("qaThread").innerHTML = "";
+  document.getElementById("qaInputArea").style.display = "block";
+  document.getElementById("qaPaywall").style.display = "none";
+  document.getElementById("qaInput").value = "";
+
+  const resultEl = document.getElementById("result");
+  resultEl.style.display = "block";
+  if (typeof resultEl.scrollIntoView === "function") {
+    resultEl.scrollIntoView({ behavior: "smooth" });
+  }
+});
+</script>
+</body>
+</html>
