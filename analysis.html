@@ -163,6 +163,14 @@
   }
   .daeun-chip.current { border-color: var(--ink); background: var(--accent-soft); }
   .daeun-chip .hanja { display: block; font-size: 14px; margin: 3px 0; }
+  .month-list { display: flex; flex-direction: column; gap: 10px; }
+  .month-row { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+  .month-row-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .month-row-head .month-num { font-weight: 700; font-size: 13px; }
+  .month-row-head .hanja { font-size: 14px; }
+  .month-row-head .tag-star { margin-left: auto; background: var(--el-earth-soft); color: var(--el-earth); }
+  .month-row-sub { font-size: 11px; color: var(--gray); margin-bottom: 4px; }
+  .month-row-blurb { font-size: 12px; color: var(--charcoal); line-height: 1.5; }
   .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .product-card {
     border: 1px solid var(--line);
@@ -311,6 +319,11 @@
       <h2 id="yearlyFortuneTitle">📅 올해 운세</h2>
       <div id="yearlyFortuneTags"></div>
       <div class="interp" id="yearlyFortuneText" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card" id="upcomingMonthsCard">
+      <h2 id="upcomingMonthsTitle">📆 다가오는 달</h2>
+      <div class="month-list" id="upcomingMonthsList"></div>
     </div>
 
     <div class="card">
@@ -680,6 +693,67 @@ function renderYearlyFortune(result) {
   textEl.textContent = buildYearlyFortune(result, seyunItem);
 }
 
+// ---------- 다가오는 달(월운) — 조회 시점 이후 남은 달의 운세 ----------
+function firstSentence(text) {
+  if (!text) return "";
+  const idx = text.indexOf(".");
+  return idx >= 0 ? text.slice(0, idx + 1) : text;
+}
+
+function monthBlurbFromTengod(label) {
+  const full = SEYUN_TENGOD_TEXT[label];
+  if (!full) return "";
+  return firstSentence(full).replace("해예요", "달이에요");
+}
+
+function buildUpcomingMonths(result) {
+  const currentMonthNum = new Date().getMonth() + 1;
+  const yongsinEls = [...new Set((result.advanced.yongsin || []).map((s) => STEM_ELEMENT[s]).filter(Boolean))];
+  const months = (result.wolun || []).filter((m) => typeof m.month === "number" && m.month > currentMonthNum);
+  return months.map((m) => {
+    const stemMatch = yongsinEls.includes(STEM_ELEMENT[m.stem]);
+    const branchMatch = yongsinEls.includes(BRANCH_ELEMENT[m.branch]);
+    const score = (stemMatch ? 1 : 0) + (branchMatch ? 1 : 0);
+    const stageBlurb = firstSentence(STAGE12_TEXT[m.stage12]);
+    return {
+      month: m.month,
+      ganzhi: m.ganzhi,
+      stemTenGod: m.stemTenGod,
+      branchTenGod: m.branchTenGod,
+      stage12: m.stage12,
+      score,
+      blurb: [monthBlurbFromTengod(m.stemTenGod), stageBlurb].filter(Boolean).join(" "),
+    };
+  });
+}
+
+function renderUpcomingMonths(result) {
+  const titleEl = document.getElementById("upcomingMonthsTitle");
+  const listEl = document.getElementById("upcomingMonthsList");
+  const months = buildUpcomingMonths(result);
+
+  if (!months.length) {
+    titleEl.textContent = "📆 다가오는 달";
+    listEl.innerHTML = "<div class='note'>올해 남은 달이 없어요. 새해가 되면 다시 확인해보세요!</div>";
+    return;
+  }
+
+  const first = months[0].month;
+  const last = months[months.length - 1].month;
+  titleEl.textContent = "📆 다가오는 달 (" + first + "~" + last + "월)";
+  listEl.innerHTML = months.map((m) => {
+    const starTag = m.score >= 2 ? "<span class='tag tag-star'>★ 용신과 잘 맞음</span>" : "";
+    return (
+      "<div class='month-row'>" +
+      "<div class='month-row-head'><span class='month-num'>" + m.month + "월</span>" +
+      "<span class='hanja'>" + m.ganzhi + "</span>" + starTag + "</div>" +
+      "<div class='month-row-sub'>천간 " + m.stemTenGod + " / 지지 " + m.branchTenGod + " · 12운성 " + m.stage12 + "</div>" +
+      "<div class='month-row-blurb'>" + m.blurb + "</div>" +
+      "</div>"
+    );
+  }).join("");
+}
+
 // ---------- 샘플 굿즈 카탈로그 (TODO: 카페24 Open API 연동 시 이 배열을 실제 상품 목록으로 교체) ----------
 const SAMPLE_PRODUCTS = [
   { name: "목(木) 원목 팔찌", ohang: "목", category: "팔찌", price: 28000, emoji: "🌳" },
@@ -748,36 +822,145 @@ const SAJU_QA_SYSTEM_PROMPT = `당신은 사주(명리학) 상담 도우미입�
 고객의 질문에 답변하세요.
 
 규칙:
-1. 제공된 사주 데이터(원국, 오행, 용신, 대운 등)에 근거해서만 답하고, 데이터에 없는 내용을 지어내지 마세요.
+1. 제공된 사주 데이터(원국, 오행, 용신, 대운, 세운 등)에 근거해서만 답하고, 데이터에 없는 내용을 지어내지 마세요.
 2. 단정적인 예언("반드시 ~합니다")을 피하고, 경향성/참고 정보로 표현하세요.
 3. 건강, 법률, 투자·대출 등 중대한 재정적 결정에 대해서는 구체적인 지시를 하지 말고 전문가 상담을 권유하세요.
-4. 답변은 3~5문장 이내로 간결하게 작성하세요.
+4. 답변은 5~8문장 정도로, 용신·격국·대운·세운 등 사주 데이터를 구체적으로 근거로 들어 충분히 풀어서 작성하세요.
 5. 과도하게 부정적이거나 불안을 조장하는 표현은 피하고, 항상 참고용 정보임을 인지시키는 톤을 유지하세요.
 6. 고객의 실명, 연락처 등 개인정보를 요구하거나 저장하지 마세요.`;
 
 let lastSajuResult = null;
 let qaFreeQuestionsRemaining = 1;
 
-// 백엔드 연동 전 데모용 임시 답변 로직 (실제 서비스에서는 SAJU_QA_SYSTEM_PROMPT를 쓰는 LLM 호출로 교체)
+// 질문 답변에 공통으로 쓰이는 사주 요약 정보 계산
+function getAnswerContext(result) {
+  const yongsinEls = [...new Set((result.advanced.yongsin || []).map((s) => STEM_ELEMENT[s]).filter(Boolean))];
+  const yongsinText = yongsinEls.length ? yongsinEls.join(", ") : "오행 균형";
+  const strengthKey = result.advanced.dayStrength.strength;
+  const strengthKo = { strong: "강한", weak: "약한", neutral: "중화된" }[strengthKey] || "중화된";
+  const geukguk = result.advanced.geukguk;
+  const current = result.daeun && result.daeun.current;
+  const daeunGanzhi = current ? current.ganzhi : null;
+  const daeunEls = current ? [...new Set([STEM_ELEMENT[current.stem], BRANCH_ELEMENT[current.branch]].filter(Boolean))] : [];
+  const daeunOverlap = daeunEls.some((el) => yongsinEls.includes(el));
+  const seyunItem = (result.seyun || []).find((s) => s.year === result.currentYear);
+  const groupCounts = countSipseongGroups(result.tenGods);
+  return { yongsinEls, yongsinText, strengthKo, geukguk, daeunGanzhi, daeunOverlap, seyunItem, groupCounts };
+}
+
+// 백엔드 연동 전 데모용 답변 로직 (규칙 기반, AI 호출 없음) — 실제 서비스에서는
+// SAJU_QA_SYSTEM_PROMPT를 쓰는 LLM 호출로 교체하되, 아래와 같이 사주 데이터를 구체적으로 인용하는 톤을 유지하세요.
+function buildWealthAnswer(result) {
+  const c = getAnswerContext(result);
+  const jaeseong = c.groupCounts["재성"] || 0;
+  const sentences = [];
+  sentences.push("재물운은 일간이 " + c.strengthKo + " 편이고 용신이 " + c.yongsinText + "인 걸 함께 보면 좋아요.");
+  sentences.push(
+    jaeseong > 0
+      ? "사주에 재성(편재·정재) 기운이 " + jaeseong + "개 있어서, 실제로 재물을 만들고 굴리는 감각이 있는 편이에요."
+      : "사주 안에 재성 기운이 뚜렷하게 드러나진 않아서, 크게 벌리기보다는 꾸준한 관리와 절제를 통해 재물을 쌓아가는 쪽이 더 잘 맞아요."
+  );
+  if (c.daeunGanzhi) {
+    sentences.push(
+      c.daeunOverlap
+        ? "지금 대운(" + c.daeunGanzhi + ")이 용신과 같은 기운이라, 재물 흐름 면에서 힘을 받기 좋은 시기예요."
+        : "지금 대운(" + c.daeunGanzhi + ")은 용신과는 결이 달라서, 이 시기엔 공격적인 투자보다 안정적인 관리에 무게를 두는 게 좋아요."
+    );
+  }
+  if (c.seyunItem && SEYUN_TENGOD_TEXT[c.seyunItem.tenGodStem]) {
+    sentences.push("올해(" + result.currentYear + "년 " + c.seyunItem.ganzhi + ")는 " + SEYUN_TENGOD_TEXT[c.seyunItem.tenGodStem]);
+  }
+  sentences.push("다만 투자나 대출처럼 중요한 재정적 결정은 이 정보만으로 판단하지 마시고, 반드시 전문가와 상담해보시는 걸 권해요.");
+  return sentences.join(" ");
+}
+
+function buildLoveAnswer(result) {
+  const c = getAnswerContext(result);
+  const relEnergy = (c.groupCounts["관성"] || 0) + (c.groupCounts["재성"] || 0);
+  const sentences = [];
+  sentences.push(
+    "애정운은 사주에서 관성·재성의 흐름과 관련이 깊은데, 지금 일간이 " + c.strengthKo + " 편이라 관계에서 " +
+    (c.strengthKo === "강한" ? "주도적인 역할을 하기 쉬운 편이에요." : "상대방의 페이스에 맞춰가는 게 자연스러운 편이에요.")
+  );
+  sentences.push(
+    relEnergy > 0
+      ? "사주 안에 관성·재성 기운이 있어서, 인연이나 관계와 관련된 흐름이 비교적 뚜렷하게 나타나는 편이에요."
+      : "사주 안에 관성·재성 기운이 두드러지진 않아서, 인연은 조급하게 찾기보다 자연스러운 흐름 속에서 만나는 편이 더 잘 맞아요."
+  );
+  if (c.daeunGanzhi) {
+    sentences.push(
+      "지금 대운(" + c.daeunGanzhi + ") 흐름도 함께 참고하면 좋아요" +
+      (c.daeunOverlap ? " — 용신과 같은 기운이라 관계 운도 비교적 순조로운 시기예요." : ".")
+    );
+  }
+  sentences.push("다만 구체적인 시기나 궁합은 개인마다 차이가 커서, 자세히 보려면 전문 상담을 받아보시는 게 더 정확해요.");
+  return sentences.join(" ");
+}
+
+function buildHealthAnswer(result) {
+  const c = getAnswerContext(result);
+  const lackingEls = Object.entries(result.fiveElements).filter(([, cnt]) => cnt === 0).map(([el]) => el);
+  const sentences = [];
+  sentences.push("사주로 보는 건강운은 오행 균형의 경향성 정도로 참고하시는 게 좋아요.");
+  sentences.push(
+    lackingEls.length
+      ? "사주 안에 " + lackingEls.join(", ") + " 기운이 없어서, 명리학적으로는 이 기운과 관련된 부분을 평소에 좀 더 챙기라고 보는 편이에요."
+      : "오행이 고르게 분포되어 있는 편이라, 특정 기운의 과부족보다는 전반적인 생활 리듬 관리가 더 중요해요."
+  );
+  sentences.push(
+    "일간이 " + c.strengthKo + " 편이라 " +
+    (c.strengthKo === "강한" ? "체력적으로는 여유가 있는 편이지만 과신하지 않는 게 좋아요." : "무리하지 않고 페이스를 조절하는 게 특히 중요해요.")
+  );
+  sentences.push("다만 이건 명리학적 경향성일 뿐이에요. 실제 건강 문제는 반드시 의료 전문가와 상담해주세요. 이 답변은 의학적 조언이 아니에요.");
+  return sentences.join(" ");
+}
+
+function buildCareerAnswer(result) {
+  const c = getAnswerContext(result);
+  const gwanseong = c.groupCounts["관성"] || 0;
+  const sentences = [];
+  sentences.push("직장·사업운은 격국(" + c.geukguk + ") 구조와 관련이 깊어요.");
+  if (GEUKGUK_TEXT[c.geukguk]) sentences.push(GEUKGUK_TEXT[c.geukguk]);
+  sentences.push(
+    gwanseong > 0
+      ? "사주에 관성(편관·정관) 기운이 " + gwanseong + "개 있어서, 조직이나 직위 안에서 성취하는 흐름과도 잘 맞는 편이에요."
+      : "사주 안에 관성 기운이 두드러지진 않아서, 조직 안에서보다 스스로 판을 만드는 방식이 더 잘 맞을 수 있어요."
+  );
+  if (c.daeunGanzhi) {
+    sentences.push(
+      c.daeunOverlap
+        ? "지금 대운(" + c.daeunGanzhi + ")이 용신과 같은 기운이라, 커리어 면에서 힘을 받기 좋은 시기예요."
+        : "지금 대운(" + c.daeunGanzhi + ")은 용신과는 결이 달라서, 큰 변화보다는 내실을 다지는 데 집중하는 시기로 삼아도 좋아요."
+    );
+  }
+  return sentences.join(" ");
+}
+
+function buildGeneralAnswer(result) {
+  const c = getAnswerContext(result);
+  const groupEntries = Object.entries(c.groupCounts);
+  const sentences = [];
+  sentences.push("말씀하신 부분은 일간 강약(" + c.strengthKo + ")과 용신(" + c.yongsinText + ") 흐름을 함께 참고해서 볼 수 있어요.");
+  if (groupEntries.length) {
+    const maxCount = Math.max(...groupEntries.map(([, v]) => v));
+    const topGroups = groupEntries.filter(([, v]) => v === maxCount).map(([g]) => g);
+    sentences.push(
+      "사주 전체에서는 " + topGroups.join(", ") + " 기운이 가장 많이 나타나요. " +
+      topGroups.map((g) => SIPSEONG_GROUP_TEXT[g]).filter(Boolean).join(" ")
+    );
+  }
+  if (c.daeunGanzhi) sentences.push("지금 대운(" + c.daeunGanzhi + ") 시기의 흐름도 함께 고려하면 좋아요.");
+  sentences.push("좀 더 구체적으로 여쭤보시면(예: 재물, 연애, 건강, 직장 등) 더 자세히 답변드릴 수 있어요. 이 답변은 참고용이며 전문 상담을 대체하지 않아요.");
+  return sentences.join(" ");
+}
+
 function mockSajuAnswer(question, result) {
   const q = question.toLowerCase();
-  const yongsinKo = (result.advanced.yongsin || []).map((s) => STEM_ELEMENT[s]).filter(Boolean);
-  const yongsinText = yongsinKo.length ? yongsinKo.join(", ") : "오행 균형";
-  const daeunGanzhi = result.daeun && result.daeun.current ? result.daeun.current.ganzhi : null;
-
-  if (/재물|돈|투자|재테크/.test(q)) {
-    return "재물운은 용신(" + yongsinText + ") 기운이 잘 살아날 때 흐름이 좋아지는 경향이 있어요. 다만 투자나 대출 같은 중요한 재정적 결정은 이 정보만으로 판단하지 마시고 전문가와 상담해보시는 걸 권해요.";
-  }
-  if (/연애|애정|결혼|궁합/.test(q)) {
-    return "애정운은 사주의 관성·재성 흐름과 관련이 깊은데, 지금 대운(" + (daeunGanzhi || "-") + ") 흐름을 함께 보면 참고가 돼요. 구체적인 시기는 개인마다 차이가 커서, 상세 상담을 통해 더 정확히 볼 수 있어요.";
-  }
-  if (/건강/.test(q)) {
-    return "사주로 보는 건강운은 오행 균형의 경향성 정도로 참고하시면 좋아요. 실제 건강 문제는 반드시 의료 전문가와 상담해주세요. 이 답변은 의학적 조언이 아니에요.";
-  }
-  if (/직장|이직|사업|일/.test(q)) {
-    return "직장·사업운은 격국(" + result.advanced.geukguk + ") 구조와 관련이 있어요. 지금 대운(" + (daeunGanzhi || "-") + ") 시기의 흐름도 함께 참고하시면 좋아요.";
-  }
-  return "말씀하신 부분은 일간 강약과 용신(" + yongsinText + ") 흐름을 참고해서 볼 수 있어요. 좀 더 구체적으로 여쭤보시면 더 자세히 답변드릴게요. (이 답변은 참고용이며 전문 상담을 대체하지 않아요.)";
+  if (/재물|돈|투자|재테크/.test(q)) return buildWealthAnswer(result);
+  if (/연애|애정|결혼|궁합/.test(q)) return buildLoveAnswer(result);
+  if (/건강/.test(q)) return buildHealthAnswer(result);
+  if (/직장|이직|사업|일/.test(q)) return buildCareerAnswer(result);
+  return buildGeneralAnswer(result);
 }
 
 function appendQaBubble(kind, text) {
@@ -1022,6 +1205,7 @@ document.getElementById("sajuForm").addEventListener("submit", (e) => {
 
   renderDaeun(result.daeun);
   renderYearlyFortune(result);
+  renderUpcomingMonths(result);
 
   const baseProducts = recommendBaseProducts(result);
   renderProducts("baseProductGrid", baseProducts, "추천 결과 없음");
