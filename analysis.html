@@ -192,6 +192,9 @@
   .product-card .name { font-weight: 700; margin-bottom: 2px; }
   .product-card .price { color: var(--ink); font-weight: 700; }
   .product-card .why { color: var(--gray); margin-top: 4px; }
+  a.product-card { display: block; text-decoration: none; color: inherit; transition: border-color 0.15s; }
+  a.product-card:hover { border-color: var(--ink); }
+  .product-card .buy-link { color: var(--ink); font-weight: 700; margin-top: 8px; }
   .note { font-size: 11px; color: var(--faint); margin-top: 10px; line-height: 1.5; }
   #result { display: none; }
   .qa-disclaimer { font-size: 11px; color: var(--faint); line-height: 1.5; background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; }
@@ -204,6 +207,30 @@
   .qa-paywall { border: 1px dashed var(--line); border-radius: 10px; padding: 14px; text-align: center; }
   .qa-paywall .price { font-size: 15px; font-weight: 700; color: var(--ink); margin: 4px 0 10px; }
   .qa-paywall button { padding: 10px 20px; border: none; border-radius: 8px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+
+  .coming-soon-wrap { position: relative; }
+  .coming-soon-blur {
+    filter: blur(3px);
+    opacity: 0.5;
+    pointer-events: none;
+    user-select: none;
+  }
+  .coming-soon-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--ink);
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: 0 6px 18px rgba(17, 17, 17, 0.25);
+    z-index: 2;
+  }
 </style>
 </head>
 <body>
@@ -344,38 +371,43 @@
 
     <div class="card">
       <h2>💬 더 궁금한 점 물어보기</h2>
-      <div class="qa-disclaimer">
-        이 답변은 명리학 참고 정보이며, 의학·법률·투자 등 중요한 결정을 대신하지 않습니다.
-        중요한 판단은 반드시 전문가와 상담하세요. 첫 질문은 무료이고, 이후 질문은 유료로 전환됩니다.
-      </div>
-      <div class="qa-thread" id="qaThread"></div>
-      <div id="qaInputArea">
-        <div class="qa-input-row">
-          <input type="text" id="qaInput" placeholder="예: 올해 재물운은 어떤가요?" />
-          <button type="button" class="qa-ask-btn" id="qaAskBtn">질문하기</button>
-        </div>
-      </div>
-      <div id="qaPaywall" class="qa-paywall" style="display:none">
-        <div>무료 질문을 모두 사용했어요.</div>
-        <div class="price">1건 결제하고 계속 질문하기 — 1,000원</div>
-        <button type="button" id="qaPayBtn">결제하고 질문 이어가기</button>
-        <div class="note">※ 프로토타입 화면입니다. 실제 결제는 카페24 PG 연동 후 연결됩니다.</div>
-      </div>
+      <div class="coming-soon-wrap">
+        <div class="coming-soon-blur">
+          <div class="qa-disclaimer">
+            이 답변은 명리학 참고 정보이며, 의학·법률·투자 등 중요한 결정을 대신하지 않습니다.
+            중요한 판단은 반드시 전문가와 상담하세요. 첫 질문은 무료이고, 이후 질문은 유료로 전환됩니다.
+          </div>
+          <div class="qa-thread" id="qaThread"></div>
+          <div id="qaInputArea">
+            <div class="qa-input-row">
+              <input type="text" id="qaInput" placeholder="예: 올해 재물운은 어떤가요?" disabled />
+              <button type="button" class="qa-ask-btn" id="qaAskBtn" disabled>질문하기</button>
+            </div>
+          </div>
+          <div id="qaPaywall" class="qa-paywall" style="display:none">
+            <div>무료 질문을 모두 사용했어요.</div>
+            <div class="price">1건 결제하고 계속 질문하기 — 1,000원</div>
+            <button type="button" id="qaPayBtn" disabled>결제하고 질문 이어가기</button>
+            <div class="note">※ 프로토타입 화면입니다. 실제 결제는 카페24 PG 연동 후 연결됩니다.</div>
+          </div>
 
-      <div style="border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px;">
-        <div style="font-weight:700; font-size:13px; margin-bottom:6px;">🔎 훨씬 더 자세한 답변이 필요하다면</div>
-        <div class="note" style="margin-top:0">
-          제 사주 데이터를 복사해서 ChatGPT나 Gemini에 직접 붙여넣으면, 훨씬 길고 자세한 해설을
-          무료로 받아볼 수 있어요. (k-fortune 같은 사이트들이 쓰는 방식이에요 — AI 비용이 들지 않아요.)
+          <div style="border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px;">
+            <div style="font-weight:700; font-size:13px; margin-bottom:6px;">🔎 훨씬 더 자세한 답변이 필요하다면</div>
+            <div class="note" style="margin-top:0">
+              제 사주 데이터를 복사해서 ChatGPT나 Gemini에 직접 붙여넣으면, 훨씬 길고 자세한 해설을
+              무료로 받아볼 수 있어요. (k-fortune 같은 사이트들이 쓰는 방식이에요 — AI 비용이 들지 않아요.)
+            </div>
+            <div class="qa-input-row" style="margin-top:8px">
+              <button type="button" class="qa-ask-btn" id="qaCopyBtn" style="flex:1" disabled>📋 사주 내용 복사하기</button>
+            </div>
+            <div class="qa-input-row" style="margin-top:8px">
+              <button type="button" class="qa-ask-btn" id="qaOpenChatgptBtn" style="flex:1; background:#10a37f;" disabled>ChatGPT 열기 ↗</button>
+              <button type="button" class="qa-ask-btn" id="qaOpenGeminiBtn" style="flex:1; background:#4285f4;" disabled>Gemini 열기 ↗</button>
+            </div>
+            <div class="note" id="qaCopyStatus"></div>
+          </div>
         </div>
-        <div class="qa-input-row" style="margin-top:8px">
-          <button type="button" class="qa-ask-btn" id="qaCopyBtn" style="flex:1">📋 사주 내용 복사하기</button>
-        </div>
-        <div class="qa-input-row" style="margin-top:8px">
-          <button type="button" class="qa-ask-btn" id="qaOpenChatgptBtn" style="flex:1; background:#10a37f;">ChatGPT 열기 ↗</button>
-          <button type="button" class="qa-ask-btn" id="qaOpenGeminiBtn" style="flex:1; background:#4285f4;">Gemini 열기 ↗</button>
-        </div>
-        <div class="note" id="qaCopyStatus"></div>
+        <div class="coming-soon-badge">🚧 준비중이에요</div>
       </div>
     </div>
   </div>
@@ -754,16 +786,20 @@ function renderUpcomingMonths(result) {
   }).join("");
 }
 
-// ---------- 샘플 굿즈 카탈로그 (TODO: 카페24 Open API 연동 시 이 배열을 실제 상품 목록으로 교체) ----------
+// ---------- 굿즈 카탈로그 ----------
+// TODO(토스쇼핑 쉐어링크 연동): 토스쇼핑 앱/PC에서 상품 상세페이지 → "쉐어링크 공유하기"로 발급받은
+// 링크를 각 상품의 url 에 붙여넣으세요. url이 채워진 상품은 카드 전체가 그 링크로 연결되고,
+// 비어 있으면(=아직 링크를 못 구했으면) 이전처럼 링크 없이 정보만 보여줘요.
+// 상품명·가격은 실제 토스쇼핑 상품 정보에 맞게 함께 수정해주세요.
 const SAMPLE_PRODUCTS = [
-  { name: "목(木) 원목 팔찌", ohang: "목", category: "팔찌", price: 28000, emoji: "🌳" },
-  { name: "화(火) 레드 캔들", ohang: "화", category: "양초", price: 19000, emoji: "🔥" },
-  { name: "토(土) 도자기 찻잔", ohang: "토", category: "찻잔", price: 32000, emoji: "🏺" },
-  { name: "금(金) 실버 팔찌", ohang: "금", category: "팔찌", price: 45000, emoji: "⚪" },
-  { name: "수(水) 블루 텀블러", ohang: "수", category: "텀블러", price: 24000, emoji: "💧" },
-  { name: "목(木) 우드 인센스", ohang: "목", category: "소품", price: 15000, emoji: "🪵" },
-  { name: "화(火) 오렌지 스카프", ohang: "화", category: "의류", price: 38000, emoji: "🧣" },
-  { name: "수(水) 네이비 파우치", ohang: "수", category: "소품", price: 21000, emoji: "👜" },
+  { name: "목(木) 원목 팔찌", ohang: "목", category: "팔찌", price: 28000, emoji: "🌳", url: "" },
+  { name: "화(火) 레드 캔들", ohang: "화", category: "양초", price: 19000, emoji: "🔥", url: "" },
+  { name: "토(土) 도자기 찻잔", ohang: "토", category: "찻잔", price: 32000, emoji: "🏺", url: "" },
+  { name: "금(金) 실버 팔찌", ohang: "금", category: "팔찌", price: 45000, emoji: "⚪", url: "" },
+  { name: "수(水) 블루 텀블러", ohang: "수", category: "텀블러", price: 24000, emoji: "💧", url: "" },
+  { name: "목(木) 우드 인센스", ohang: "목", category: "소품", price: 15000, emoji: "🪵", url: "" },
+  { name: "화(火) 오렌지 스카프", ohang: "화", category: "의류", price: 38000, emoji: "🧣", url: "" },
+  { name: "수(水) 네이비 파우치", ohang: "수", category: "소품", price: 21000, emoji: "👜", url: "" },
 ];
 
 // 평생 기본 라인업: 원국(태어난 사주)의 용신·부족 오행 기준 — 한 번 사면 계속 쓰는 상품
@@ -1149,14 +1185,16 @@ function renderDaeun(daeun) {
 function renderProducts(targetId, products, emptyMessage) {
   const html = products.map((p) => {
     const soft = ELEMENT_HEX_SOFT[p.ohang] || "var(--accent-soft)";
-    return (
-      "<div class='product-card'>" +
+    const inner =
       "<div class='thumb' style='background:" + soft + "'>" + p.emoji + "</div>" +
       "<div class='name'>" + p.name + "</div>" +
       "<div class='price'>" + p.price.toLocaleString() + "원</div>" +
       "<div class='why'>" + p.reason + "</div>" +
-      "</div>"
-    );
+      (p.url ? "<div class='buy-link'>구매하러 가기 →</div>" : "");
+    // 토스쇼핑 쉐어링크가 연결된 상품은 카드 전체가 링크가 됩니다.
+    return p.url
+      ? "<a class='product-card' href='" + p.url + "' target='_blank' rel='noopener sponsored'>" + inner + "</a>"
+      : "<div class='product-card'>" + inner + "</div>";
   }).join("");
   document.getElementById(targetId).innerHTML = html || "<div class='note'>" + (emptyMessage || "추천 결과 없음") + "</div>";
 }
