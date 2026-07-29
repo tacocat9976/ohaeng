@@ -1,0 +1,10 @@
+[
+  { "name": "목(木) 원목 팔찌", "ohang": "목", "category": "패션", "theme": "", "price": 28000, "emoji": "🌳", "image": "", "url": "", "tags": "" },
+  { "name": "화(火) 레드 캔들", "ohang": "화", "category": "홈데코", "theme": "", "price": 19000, "emoji": "🔥", "image": "", "url": "", "tags": "" },
+  { "name": "토(土) 도자기 찻잔", "ohang": "토", "category": "생활용품", "theme": "", "price": 32000, "emoji": "🏺", "image": "", "url": "", "tags": "" },
+  { "name": "금(金) 실버 팔찌", "ohang": "금", "category": "패션", "theme": "", "price": 45000, "emoji": "⚪", "image": "", "url": "", "tags": "" },
+  { "name": "수(水) 블루 텀블러", "ohang": "수", "category": "생활용품", "theme": "", "price": 24000, "emoji": "💧", "image": "", "url": "", "tags": "" },
+  { "name": "목(木) 우드 인센스", "ohang": "목", "category": "취미·자기계발", "theme": "", "price": 15000, "emoji": "🪵", "image": "", "url": "", "tags": "" },
+  { "name": "화(火) 오렌지 스카프", "ohang": "화", "category": "패션", "theme": "", "price": 38000, "emoji": "🧣", "image": "", "url": "", "tags": "" },
+  { "name": "수(水) 네이비 파우치", "ohang": "수", "category": "패션", "theme": "", "price": 21000, "emoji": "👜", "image": "", "url": "", "tags": "" }
+]

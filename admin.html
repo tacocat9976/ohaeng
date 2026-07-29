@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>OHAENG · 상품 관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #111111;
+    --charcoal: #2b2b2b;
+    --gray: #6b6b6b;
+    --faint: #9b9b9b;
+    --beige: #c8c2b6;
+    --cream: #e8e4db;
+    --card: #fbf9f5;
+    --line: #ded7c8;
+    --accent-soft: #efeae0;
+
+    --el-wood: #5c7a52; --el-fire: #c1502e; --el-earth: #b98b34; --el-metal: #8c8c8c; --el-water: #3e5c76;
+    --el-wood-soft: #e4eae0; --el-fire-soft: #f3ddd3; --el-earth-soft: #f1e4c8; --el-metal-soft: #e8e8e8; --el-water-soft: #dce4ea;
+
+    font-family: "Manrope", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--cream); color: var(--ink); padding: 20px 16px 80px; }
+  .wrap { max-width: 720px; margin: 0 auto; }
+
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); }
+  .brand svg { width: 20px; height: 20px; }
+  .brand span { font-weight: 800; font-size: 14px; letter-spacing: 0.12em; }
+  .topbar a.back { font-size: 12px; color: var(--gray); text-decoration: none; }
+
+  h1 { font-size: 19px; margin: 14px 0 4px; font-weight: 800; }
+  .sub { color: var(--gray); font-size: 13px; margin-bottom: 18px; line-height: 1.6; }
+
+  .warn {
+    font-size: 11px; color: var(--gray); background: var(--accent-soft);
+    border-radius: 8px; padding: 8px 10px; margin-bottom: 18px; line-height: 1.5;
+  }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .card h2 { font-size: 14px; margin: 0 0 12px; font-weight: 700; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 11px; color: var(--gray); margin-bottom: 4px; }
+  .field input, .field select {
+    width: 100%; padding: 8px 9px; border: 1px solid var(--line); border-radius: 8px;
+    font-size: 13px; background: #fff; color: var(--ink); font-family: inherit;
+  }
+  .hint { font-size: 11px; color: var(--faint); margin-top: 3px; line-height: 1.5; }
+
+  .btn {
+    padding: 10px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-primary { background: var(--ink); color: #fff; }
+  .btn-secondary { background: #fff; border: 1px solid var(--line); color: var(--ink); }
+  .btn-danger { background: #fff; border: 1px solid var(--el-fire); color: var(--el-fire); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+  .preview-thumb {
+    width: 56px; height: 56px; border-radius: 8px; display: flex; align-items: center;
+    justify-content: center; font-size: 24px; overflow: hidden; flex: 0 0 auto;
+  }
+  .preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+  .product-row {
+    display: flex; gap: 12px; align-items: center; padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .product-row:last-child { border-bottom: none; }
+  .product-row .info { flex: 1; min-width: 0; }
+  .product-row .name { font-weight: 700; font-size: 13px; }
+  .product-row .meta { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .product-row .badges { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+  .badge {
+    font-size: 10px; padding: 2px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--charcoal);
+  }
+  .badge.has-link { background: #e4eae0; color: var(--el-wood); }
+  .badge.no-link { background: var(--el-fire-soft); color: var(--el-fire); }
+  .row-actions { display: flex; gap: 6px; flex: 0 0 auto; }
+  .row-actions button {
+    border: 1px solid var(--line); background: #fff; border-radius: 6px; padding: 5px 10px;
+    font-size: 11px; cursor: pointer; font-family: inherit; color: var(--ink);
+  }
+  .row-actions button.del { color: var(--el-fire); border-color: var(--el-fire); }
+
+  .empty { font-size: 12px; color: var(--faint); padding: 16px 0; text-align: center; }
+  .count { font-size: 12px; color: var(--gray); margin-bottom: 4px; }
+  #fileInput { display: none; }
+  .status { font-size: 12px; color: var(--el-wood); margin-top: 8px; min-height: 16px; }
+
+  #gate {
+    position: fixed; inset: 0; background: var(--cream); z-index: 100;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  #gate .box { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 26px; max-width: 320px; width: 100%; text-align: center; }
+  #gate .box svg { width: 32px; height: 32px; color: var(--ink); margin-bottom: 10px; }
+  #gate .box h2 { font-size: 15px; margin: 0 0 6px; }
+  #gate .box p { font-size: 12px; color: var(--gray); margin: 0 0 16px; line-height: 1.5; }
+  #gate input { width: 100%; padding: 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
+  #gate button { width: 100%; padding: 10px; border: none; border-radius: 8px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; }
+  #gate .err { font-size: 12px; color: var(--el-fire); margin-top: 8px; min-height: 16px; }
+  #appBody.locked { display: none; }
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="box">
+    <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round">
+      <path d="M 35.47 21.49 A 32 32 0 0 1 64.53 21.49" />
+      <path d="M 72.63 27.37 A 32 32 0 0 1 81.61 55.01" />
+      <path d="M 78.51 64.53 A 32 32 0 0 1 55.01 81.61" />
+      <path d="M 44.99 81.61 A 32 32 0 0 1 21.49 64.53" />
+      <path d="M 18.39 55.01 A 32 32 0 0 1 27.37 27.37" />
+      <circle cx="50" cy="50" r="9" fill="currentColor" stroke="none" />
+    </svg>
+    <h2>운영자 전용 페이지예요</h2>
+    <p>비밀번호를 입력해주세요.</p>
+    <input type="password" id="gatePw" placeholder="비밀번호" autocomplete="off" />
+    <button type="button" id="gateBtn">입장하기</button>
+    <div class="err" id="gateErr"></div>
+  </div>
+</div>
+
+<div class="wrap locked" id="appBody">
+  <div class="topbar">
+    <a class="brand" href="./index.html">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="9" stroke-linecap="round">
+        <path d="M 35.47 21.49 A 32 32 0 0 1 64.53 21.49" />
+        <path d="M 72.63 27.37 A 32 32 0 0 1 81.61 55.01" />
+        <path d="M 78.51 64.53 A 32 32 0 0 1 55.01 81.61" />
+        <path d="M 44.99 81.61 A 32 32 0 0 1 21.49 64.53" />
+        <path d="M 18.39 55.01 A 32 32 0 0 1 27.37 27.37" />
+        <circle cx="50" cy="50" r="9" fill="currentColor" stroke="none" />
+      </svg>
+      <span>OHAENG</span>
+    </a>
+    <a class="back" href="./analysis.html">← 분석 위젯 미리보기</a>
+  </div>
+
+  <h1>🛠 상품 관리</h1>
+  <div class="sub">
+    네이버 쇼핑커넥트·토스쇼핑 쉐어링크에서 직접 찾은 상품을 여기에 입력하면, 분석 위젯의
+    "평생 기본 아이템" / "지금 대운 시기 아이템" 추천에 그대로 반영돼요.
+  </div>
+  <div class="warn">
+    ⚠️ 이 화면은 운영자용이에요. 방문자에게 이 페이지 링크를 직접 공유하지 마세요(홈페이지 메뉴에는 연결되어 있지 않아요).
+    입력한 내용은 이 브라우저에만 저장돼요 — 반드시 아래 "JSON으로 내보내기"로 파일을 받아서 사이트에 올려야 실제로 반영돼요.
+  </div>
+
+  <div class="card">
+    <h2 id="formTitle">➕ 상품 추가</h2>
+    <div class="field">
+      <label>상품명</label>
+      <input type="text" id="f_name" placeholder="예: 보온 텀블러" />
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>오행</label>
+        <select id="f_ohang">
+          <option value="목">목(木)</option>
+          <option value="화">화(火)</option>
+          <option value="토">토(土)</option>
+          <option value="금">금(金)</option>
+          <option value="수">수(水)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>카테고리</label>
+        <select id="f_category">
+          <option value="생활용품">생활용품</option>
+          <option value="건강관리">건강관리</option>
+          <option value="패션">패션</option>
+          <option value="홈데코">홈데코</option>
+          <option value="취미·자기계발">취미·자기계발</option>
+          <option value="디지털">디지털</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field">
+        <label>추천 테마 (선택)</label>
+        <select id="f_theme">
+          <option value="">선택 안 함</option>
+          <option value="활력">활력</option>
+          <option value="휴식">휴식</option>
+          <option value="성장">성장</option>
+          <option value="집중">집중</option>
+          <option value="안정">안정</option>
+          <option value="행운">행운</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>가격 (원)</label>
+        <input type="number" id="f_price" placeholder="예: 24000" min="0" step="100" />
+      </div>
+    </div>
+    <div class="field">
+      <label>이미지 URL (없으면 이모지로 대체돼요)</label>
+      <input type="text" id="f_image" placeholder="https://..." />
+      <div class="hint">네이버·토스 상품 페이지에서 상품 사진 우클릭 → "이미지 주소 복사"로 가져올 수 있어요. 일부 쇼핑몰은 외부 연결을 막아둬서 화면에 안 보일 수도 있어요 — 그럴 땐 자동으로 이모지로 대체돼요.</div>
+    </div>
+    <div class="field">
+      <label>이모지 (이미지 없을 때 보여줄 아이콘)</label>
+      <input type="text" id="f_emoji" placeholder="예: 🌳" maxlength="4" />
+    </div>
+    <div class="field">
+      <label>구매 링크 URL (네이버 쇼핑커넥트 / 토스쇼핑 쉐어링크)</label>
+      <input type="text" id="f_url" placeholder="https://..." />
+    </div>
+    <div class="field">
+      <label>태그 (쉼표로 구분, 선택)</label>
+      <input type="text" id="f_tags" placeholder="예: 보온, 생활" />
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="saveBtn">추가하기</button>
+      <button class="btn btn-secondary" id="cancelEditBtn" style="display:none">수정 취소</button>
+    </div>
+    <div class="status" id="formStatus"></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+      <h2 style="margin:0">📦 상품 목록</h2>
+      <div class="count" id="countLabel"></div>
+    </div>
+    <div id="productList"></div>
+  </div>
+
+  <div class="card">
+    <h2>내보내기 / 불러오기</h2>
+    <div class="hint" style="margin-bottom:10px">
+      상품을 다 입력했으면 "JSON으로 내보내기"를 눌러 products.json 파일을 받고, 사이트 폴더(index.html·analysis.html이 있는 곳)의
+      기존 products.json을 그 파일로 교체한 뒤 다시 배포하면 돼요.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="exportBtn">⬇️ JSON으로 내보내기</button>
+      <button class="btn btn-secondary" id="importBtn">⬆️ JSON 불러오기</button>
+      <button class="btn btn-danger" id="resetBtn">기본 샘플로 초기화</button>
+    </div>
+    <input type="file" id="fileInput" accept="application/json" />
+    <div class="status" id="ioStatus"></div>
+  </div>
+</div>
+
+<script>
+// ---------- 접근 제한 (참고: 진짜 보안이 아니에요) ----------
+// 이 화면 코드를 볼 수 있는 사람은 누구나 이 비밀번호를 우회할 수 있어요(개발자 도구로 조회 가능).
+// "우연히 링크를 열어본 사람"을 막는 용도예요. 아래 비밀번호를 원하는 값으로 바꿔서 쓰세요.
+const ADMIN_PASSWORD = "ohaeng2026";
+const GATE_SESSION_KEY = "ohaeng_admin_unlocked";
+
+function unlockGate() {
+  document.getElementById("gate").style.display = "none";
+  document.getElementById("appBody").classList.remove("locked");
+}
+
+if (sessionStorage.getItem(GATE_SESSION_KEY) === "1") {
+  unlockGate();
+}
+
+document.getElementById("gateBtn").addEventListener("click", () => {
+  const pw = document.getElementById("gatePw").value;
+  if (pw === ADMIN_PASSWORD) {
+    sessionStorage.setItem(GATE_SESSION_KEY, "1");
+    unlockGate();
+  } else {
+    document.getElementById("gateErr").textContent = "비밀번호가 올바르지 않아요.";
+  }
+});
+document.getElementById("gatePw").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") document.getElementById("gateBtn").click();
+});
+
+const DEFAULT_PRODUCTS = [
+  { name: "목(木) 원목 팔찌", ohang: "목", category: "패션", theme: "", price: 28000, emoji: "🌳", image: "", url: "", tags: "" },
+  { name: "화(火) 레드 캔들", ohang: "화", category: "홈데코", theme: "", price: 19000, emoji: "🔥", image: "", url: "", tags: "" },
+  { name: "토(土) 도자기 찻잔", ohang: "토", category: "생활용품", theme: "", price: 32000, emoji: "🏺", image: "", url: "", tags: "" },
+  { name: "금(金) 실버 팔찌", ohang: "금", category: "패션", theme: "", price: 45000, emoji: "⚪", image: "", url: "", tags: "" },
+  { name: "수(水) 블루 텀블러", ohang: "수", category: "생활용품", theme: "", price: 24000, emoji: "💧", image: "", url: "", tags: "" },
+  { name: "목(木) 우드 인센스", ohang: "목", category: "취미·자기계발", theme: "", price: 15000, emoji: "🪵", image: "", url: "", tags: "" },
+  { name: "화(火) 오렌지 스카프", ohang: "화", category: "패션", theme: "", price: 38000, emoji: "🧣", image: "", url: "", tags: "" },
+  { name: "수(水) 네이비 파우치", ohang: "수", category: "패션", theme: "", price: 21000, emoji: "👜", image: "", url: "", tags: "" },
+];
+
+const STORAGE_KEY = "ohaeng_admin_products_v1";
+const ELEMENT_EMOJI_HINT = { "목": "🌳", "화": "🔥", "토": "🏺", "금": "⚪", "수": "💧" };
+
+function loadProducts() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+  return DEFAULT_PRODUCTS.map((p) => ({ ...p }));
+}
+
+function saveProducts() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+}
+
+let products = loadProducts();
+let editingIndex = -1;
+
+function el(id) { return document.getElementById(id); }
+
+function resetForm() {
+  el("f_name").value = "";
+  el("f_ohang").value = "목";
+  el("f_category").value = "생활용품";
+  el("f_theme").value = "";
+  el("f_price").value = "";
+  el("f_image").value = "";
+  el("f_emoji").value = "";
+  el("f_url").value = "";
+  el("f_tags").value = "";
+  editingIndex = -1;
+  el("formTitle").textContent = "➕ 상품 추가";
+  el("saveBtn").textContent = "추가하기";
+  el("cancelEditBtn").style.display = "none";
+  el("formStatus").textContent = "";
+}
+
+function fillFormFromProduct(p) {
+  el("f_name").value = p.name || "";
+  el("f_ohang").value = p.ohang || "목";
+  el("f_category").value = p.category || "생활용품";
+  el("f_theme").value = p.theme || "";
+  el("f_price").value = p.price || "";
+  el("f_image").value = p.image || "";
+  el("f_emoji").value = p.emoji || "";
+  el("f_url").value = p.url || "";
+  el("f_tags").value = p.tags || "";
+}
+
+function renderThumb(p) {
+  const soft = "var(--el-" + { "목": "wood", "화": "fire", "토": "earth", "금": "metal", "수": "water" }[p.ohang] + "-soft)";
+  const inner = p.image
+    ? "<img src='" + p.image + "' alt='' onerror=\"this.parentElement.textContent='" + (p.emoji || "🎁") + "'\" />"
+    : (p.emoji || "🎁");
+  return "<div class='preview-thumb' style='background:" + soft + "'>" + inner + "</div>";
+}
+
+function renderList() {
+  const listEl = el("productList");
+  el("countLabel").textContent = products.length + "개";
+  if (!products.length) {
+    listEl.innerHTML = "<div class='empty'>아직 등록된 상품이 없어요. 위에서 추가해보세요.</div>";
+    return;
+  }
+  listEl.innerHTML = products.map((p, i) => {
+    const linkBadge = p.url
+      ? "<span class='badge has-link'>링크 있음</span>"
+      : "<span class='badge no-link'>링크 없음</span>";
+    const themeBadge = p.theme ? "<span class='badge'>" + p.theme + "</span>" : "";
+    return (
+      "<div class='product-row'>" +
+      renderThumb(p) +
+      "<div class='info'>" +
+      "<div class='name'>" + p.name + "</div>" +
+      "<div class='meta'>" + p.ohang + " · " + p.category + " · " + (Number(p.price) || 0).toLocaleString() + "원</div>" +
+      "<div class='badges'>" + linkBadge + themeBadge + "</div>" +
+      "</div>" +
+      "<div class='row-actions'>" +
+      "<button data-action='edit' data-index='" + i + "'>수정</button>" +
+      "<button data-action='del' data-index='" + i + "' class='del'>삭제</button>" +
+      "</div>" +
+      "</div>"
+    );
+  }).join("");
+}
+
+el("f_ohang").addEventListener("change", () => {
+  if (!el("f_emoji").value) el("f_emoji").placeholder = "예: " + ELEMENT_EMOJI_HINT[el("f_ohang").value];
+});
+
+el("productList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-action]");
+  if (!btn) return;
+  const idx = Number(btn.dataset.index);
+  if (btn.dataset.action === "edit") {
+    editingIndex = idx;
+    fillFormFromProduct(products[idx]);
+    el("formTitle").textContent = "✏️ 상품 수정";
+    el("saveBtn").textContent = "수정 완료";
+    el("cancelEditBtn").style.display = "inline-block";
+    if (typeof window.scrollTo === "function") window.scrollTo({ top: 0, behavior: "smooth" });
+  } else if (btn.dataset.action === "del") {
+    if (confirm("'" + products[idx].name + "' 상품을 삭제할까요?")) {
+      products.splice(idx, 1);
+      saveProducts();
+      renderList();
+    }
+  }
+});
+
+el("cancelEditBtn").addEventListener("click", resetForm);
+
+el("saveBtn").addEventListener("click", () => {
+  const name = el("f_name").value.trim();
+  if (!name) {
+    el("formStatus").textContent = "상품명을 입력해주세요.";
+    el("formStatus").style.color = "var(--el-fire)";
+    return;
+  }
+  const price = Number(el("f_price").value) || 0;
+  const product = {
+    name,
+    ohang: el("f_ohang").value,
+    category: el("f_category").value,
+    theme: el("f_theme").value,
+    price,
+    emoji: el("f_emoji").value.trim() || ELEMENT_EMOJI_HINT[el("f_ohang").value] || "🎁",
+    image: el("f_image").value.trim(),
+    url: el("f_url").value.trim(),
+    tags: el("f_tags").value.trim(),
+  };
+
+  if (editingIndex >= 0) {
+    products[editingIndex] = product;
+  } else {
+    products.push(product);
+  }
+  saveProducts();
+  renderList();
+  el("formStatus").style.color = "var(--el-wood)";
+  el("formStatus").textContent = editingIndex >= 0 ? "수정했어요." : "추가했어요.";
+  resetForm();
+});
+
+el("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(products, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "products.json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  el("ioStatus").style.color = "var(--el-wood)";
+  el("ioStatus").textContent = "products.json 파일을 내려받았어요. 사이트 폴더에 올려서 교체해주세요.";
+});
+
+el("importBtn").addEventListener("click", () => el("fileInput").click());
+
+el("fileInput").addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data)) throw new Error("배열 형식이 아니에요");
+      products = data;
+      saveProducts();
+      renderList();
+      el("ioStatus").style.color = "var(--el-wood)";
+      el("ioStatus").textContent = file.name + " 불러왔어요 (" + data.length + "개 상품).";
+    } catch (err) {
+      el("ioStatus").style.color = "var(--el-fire)";
+      el("ioStatus").textContent = "불러오기에 실패했어요: " + err.message;
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+el("resetBtn").addEventListener("click", () => {
+  if (!confirm("현재 목록을 지우고 기본 샘플 8개로 초기화할까요?")) return;
+  products = DEFAULT_PRODUCTS.map((p) => ({ ...p }));
+  saveProducts();
+  renderList();
+  resetForm();
+  el("ioStatus").style.color = "var(--gray)";
+  el("ioStatus").textContent = "기본 샘플로 초기화했어요.";
+});
+
+resetForm();
+renderList();
+</script>
+</body>
+</html>

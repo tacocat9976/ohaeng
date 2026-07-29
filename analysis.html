@@ -188,7 +188,9 @@
     justify-content: center;
     font-size: 24px;
     margin-bottom: 6px;
+    overflow: hidden;
   }
+  .product-card .thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
   .product-card .name { font-weight: 700; margin-bottom: 2px; }
   .product-card .price { color: var(--ink); font-weight: 700; }
   .product-card .why { color: var(--gray); margin-top: 4px; }
@@ -196,6 +198,15 @@
   a.product-card:hover { border-color: var(--ink); }
   .product-card .buy-link { color: var(--ink); font-weight: 700; margin-top: 8px; }
   .note { font-size: 11px; color: var(--faint); margin-top: 10px; line-height: 1.5; }
+  .affiliate-disclaimer {
+    font-size: 11px;
+    color: var(--gray);
+    line-height: 1.5;
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin-bottom: 14px;
+  }
   #result { display: none; }
   .qa-disclaimer { font-size: 11px; color: var(--faint); line-height: 1.5; background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; }
   .qa-thread { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
@@ -353,6 +364,11 @@
       <div class="month-list" id="upcomingMonthsList"></div>
     </div>
 
+    <div class="affiliate-disclaimer">
+      💡 이 페이지의 상품 링크에는 제휴 마케팅 링크가 포함되어 있어요. 이 링크를 통해 구매하시면
+      판매 금액의 일정액을 수수료로 제공받을 수 있어요.
+    </div>
+
     <div class="card">
       <h2>🎁 평생 기본 아이템</h2>
       <div class="note" style="margin-top:0">태어난 사주(원국)의 용신 기준 — 한 번 마련해두고 오래 쓰는 아이템</div>
@@ -364,8 +380,8 @@
       <div class="note" style="margin-top:0" id="daeunNote"></div>
       <div class="product-grid" id="seasonalProductGrid"></div>
       <div class="note">
-        ※ 지금은 샘플 상품으로 추천 로직을 보여드리는 화면입니다. 카페24 스토어 연동 후에는
-        실제 등록된 상품 중에서 추천하도록 자동으로 바뀝니다.
+        ※ 지금은 샘플 상품으로 추천 로직을 보여드리는 화면입니다. 실제 상품 링크(네이버 쇼핑커넥트·
+        토스쇼핑 쉐어링크)가 연결되면 이 화면 그대로 실제 구매로 이어집니다.
       </div>
     </div>
 
@@ -787,20 +803,34 @@ function renderUpcomingMonths(result) {
 }
 
 // ---------- 굿즈 카탈로그 ----------
-// TODO(토스쇼핑 쉐어링크 연동): 토스쇼핑 앱/PC에서 상품 상세페이지 → "쉐어링크 공유하기"로 발급받은
-// 링크를 각 상품의 url 에 붙여넣으세요. url이 채워진 상품은 카드 전체가 그 링크로 연결되고,
-// 비어 있으면(=아직 링크를 못 구했으면) 이전처럼 링크 없이 정보만 보여줘요.
-// 상품명·가격은 실제 토스쇼핑 상품 정보에 맞게 함께 수정해주세요.
-const SAMPLE_PRODUCTS = [
-  { name: "목(木) 원목 팔찌", ohang: "목", category: "팔찌", price: 28000, emoji: "🌳", url: "" },
-  { name: "화(火) 레드 캔들", ohang: "화", category: "양초", price: 19000, emoji: "🔥", url: "" },
-  { name: "토(土) 도자기 찻잔", ohang: "토", category: "찻잔", price: 32000, emoji: "🏺", url: "" },
-  { name: "금(金) 실버 팔찌", ohang: "금", category: "팔찌", price: 45000, emoji: "⚪", url: "" },
-  { name: "수(水) 블루 텀블러", ohang: "수", category: "텀블러", price: 24000, emoji: "💧", url: "" },
-  { name: "목(木) 우드 인센스", ohang: "목", category: "소품", price: 15000, emoji: "🪵", url: "" },
-  { name: "화(火) 오렌지 스카프", ohang: "화", category: "의류", price: 38000, emoji: "🧣", url: "" },
-  { name: "수(水) 네이비 파우치", ohang: "수", category: "소품", price: 21000, emoji: "👜", url: "" },
+// 실제 상품은 이 배열을 직접 고치는 대신 admin.html(상품 관리 화면)에서 추가/수정하고
+// "JSON으로 내보내기"로 만든 products.json 파일을 이 폴더에 두면 자동으로 반영돼요.
+// products.json이 없거나 아직 못 찾았을 때(예: 로컬에서 파일로 직접 열었을 때)는
+// 아래 DEFAULT_PRODUCTS가 대신 쓰여요.
+const DEFAULT_PRODUCTS = [
+  { name: "목(木) 원목 팔찌", ohang: "목", category: "패션", price: 28000, emoji: "🌳", image: "", url: "" },
+  { name: "화(火) 레드 캔들", ohang: "화", category: "홈데코", price: 19000, emoji: "🔥", image: "", url: "" },
+  { name: "토(土) 도자기 찻잔", ohang: "토", category: "생활용품", price: 32000, emoji: "🏺", image: "", url: "" },
+  { name: "금(金) 실버 팔찌", ohang: "금", category: "패션", price: 45000, emoji: "⚪", image: "", url: "" },
+  { name: "수(水) 블루 텀블러", ohang: "수", category: "생활용품", price: 24000, emoji: "💧", image: "", url: "" },
+  { name: "목(木) 우드 인센스", ohang: "목", category: "취미·자기계발", price: 15000, emoji: "🪵", image: "", url: "" },
+  { name: "화(火) 오렌지 스카프", ohang: "화", category: "패션", price: 38000, emoji: "🧣", image: "", url: "" },
+  { name: "수(水) 네이비 파우치", ohang: "수", category: "패션", price: 21000, emoji: "👜", image: "", url: "" },
 ];
+
+// 페이지 로드 시 products.json을 불러와서 CATALOG을 교체해요. 실패하면(파일이 없거나
+// 로컬에서 file://로 직접 열어서 fetch가 막힌 경우) DEFAULT_PRODUCTS를 그대로 써요.
+let CATALOG = DEFAULT_PRODUCTS;
+if (typeof fetch === "function") {
+  fetch("./products.json", { cache: "no-store" })
+    .then((res) => (res && res.ok ? res.json() : null))
+    .then((data) => {
+      if (Array.isArray(data) && data.length) CATALOG = data;
+    })
+    .catch(() => {
+      // products.json 없음(파일이 없거나 file://로 직접 열어서 fetch가 막힌 경우) → DEFAULT_PRODUCTS 유지
+    });
+}
 
 // 평생 기본 라인업: 원국(태어난 사주)의 용신·부족 오행 기준 — 한 번 사면 계속 쓰는 상품
 function recommendBaseProducts(result) {
@@ -809,7 +839,7 @@ function recommendBaseProducts(result) {
     Object.entries(result.fiveElements).filter(([, count]) => count === 0).map(([el]) => el)
   );
 
-  const scored = SAMPLE_PRODUCTS.map((p) => {
+  const scored = CATALOG.map((p) => {
     let score = 0;
     let reasons = [];
     if (yongsinElements.has(p.ohang)) { score += 2; reasons.push("평생 용신(" + p.ohang + ") 보강"); }
@@ -830,7 +860,7 @@ function recommendSeasonalProducts(result, excludeNames) {
   );
   const yongsinElements = new Set((result.advanced.yongsin || []).map((s) => STEM_ELEMENT[s]).filter(Boolean));
 
-  const scored = SAMPLE_PRODUCTS
+  const scored = CATALOG
     .filter((p) => !excludeNames.has(p.name))
     .map((p) => {
       let score = 0;
@@ -1185,8 +1215,13 @@ function renderDaeun(daeun) {
 function renderProducts(targetId, products, emptyMessage) {
   const html = products.map((p) => {
     const soft = ELEMENT_HEX_SOFT[p.ohang] || "var(--accent-soft)";
+    const fallbackEmoji = p.emoji || "🎁";
+    // 이미지가 있으면 실제 상품 사진을, 없거나 불러오기 실패하면(hotlink 차단 등) 이모지로 자동 대체해요.
+    const thumbInner = p.image
+      ? "<img src='" + p.image + "' alt='' loading='lazy' onerror=\"this.parentElement.textContent='" + fallbackEmoji + "'\" />"
+      : fallbackEmoji;
     const inner =
-      "<div class='thumb' style='background:" + soft + "'>" + p.emoji + "</div>" +
+      "<div class='thumb' style='background:" + soft + "'>" + thumbInner + "</div>" +
       "<div class='name'>" + p.name + "</div>" +
       "<div class='price'>" + p.price.toLocaleString() + "원</div>" +
       "<div class='why'>" + p.reason + "</div>" +
