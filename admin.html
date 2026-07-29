@@ -236,10 +236,26 @@
   </div>
 
   <div class="card">
-    <h2>내보내기 / 불러오기</h2>
+    <h2>📊 엑셀로 한꺼번에 등록</h2>
+    <div class="hint" style="margin-bottom:10px">
+      상품을 여러 개 등록할 땐 위 입력폼 대신 엑셀을 쓰는 게 훨씬 빨라요. 먼저 템플릿을 받아서 엑셀에 상품을 채운 다음,
+      "엑셀 불러오기"로 한 번에 등록하세요. <b>오행</b>은 목/화/토/금/수, <b>카테고리</b>는 생활용품/건강관리/패션/홈데코/취미·자기계발/디지털,
+      <b>테마</b>는 활력/휴식/성장/집중/안정/행운(또는 빈칸) 중에서 정확히 입력해주세요.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="xlsxTemplateBtn">📥 엑셀 템플릿 받기</button>
+      <button class="btn btn-primary" id="xlsxImportBtn">📤 엑셀 불러오기</button>
+      <button class="btn btn-secondary" id="xlsxExportBtn">✏️ 현재 목록 엑셀로 내보내기</button>
+    </div>
+    <input type="file" id="xlsxFileInput" accept=".xlsx,.xls" style="display:none" />
+    <div class="status" id="xlsxStatus"></div>
+  </div>
+
+  <div class="card">
+    <h2>내보내기 / 불러오기 (JSON)</h2>
     <div class="hint" style="margin-bottom:10px">
       상품을 다 입력했으면 "JSON으로 내보내기"를 눌러 products.json 파일을 받고, 사이트 폴더(index.html·analysis.html이 있는 곳)의
-      기존 products.json을 그 파일로 교체한 뒤 다시 배포하면 돼요.
+      기존 products.json을 그 파일로 교체한 뒤 다시 배포하면 돼요. (엑셀 파일은 그대로 올려도 반영되지 않아요 — 반드시 이 JSON 파일로 내보내야 해요.)
     </div>
     <div class="btn-row">
       <button class="btn btn-primary" id="exportBtn">⬇️ JSON으로 내보내기</button>
@@ -251,6 +267,7 @@
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ---------- 접근 제한 (참고: 진짜 보안이 아니에요) ----------
 // 이 화면 코드를 볼 수 있는 사람은 누구나 이 비밀번호를 우회할 수 있어요(개발자 도구로 조회 가능).
@@ -484,6 +501,104 @@ el("resetBtn").addEventListener("click", () => {
   resetForm();
   el("ioStatus").style.color = "var(--gray)";
   el("ioStatus").textContent = "기본 샘플로 초기화했어요.";
+});
+
+// ---------- 엑셀 등록 ----------
+const XLSX_HEADERS = ["상품명", "오행", "카테고리", "테마", "가격", "이모지", "이미지URL", "구매링크", "태그"];
+const OHANG_VALUES = ["목", "화", "토", "금", "수"];
+const CATEGORY_VALUES = ["생활용품", "건강관리", "패션", "홈데코", "취미·자기계발", "디지털"];
+const THEME_VALUES = ["", "활력", "휴식", "성장", "집중", "안정", "행운"];
+
+function productsToXlsxRows(list) {
+  return list.map((p) => ({
+    "상품명": p.name || "",
+    "오행": p.ohang || "",
+    "카테고리": p.category || "",
+    "테마": p.theme || "",
+    "가격": p.price || 0,
+    "이모지": p.emoji || "",
+    "이미지URL": p.image || "",
+    "구매링크": p.url || "",
+    "태그": p.tags || "",
+  }));
+}
+
+function buildProductSheet(rows) {
+  const ws = XLSX.utils.json_to_sheet(rows, { header: XLSX_HEADERS });
+  ws["!cols"] = [{ wch: 24 }, { wch: 6 }, { wch: 12 }, { wch: 8 }, { wch: 10 }, { wch: 8 }, { wch: 32 }, { wch: 32 }, { wch: 18 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "products");
+  return wb;
+}
+
+el("xlsxTemplateBtn").addEventListener("click", () => {
+  const sampleRows = [
+    { "상품명": "목(木) 원목 팔찌", "오행": "목", "카테고리": "패션", "테마": "성장", "가격": 28000, "이모지": "🌳", "이미지URL": "", "구매링크": "", "태그": "원목,팔찌" },
+    { "상품명": "", "오행": "", "카테고리": "", "테마": "", "가격": "", "이모지": "", "이미지URL": "", "구매링크": "", "태그": "" },
+  ];
+  XLSX.writeFile(buildProductSheet(sampleRows), "ohaeng_products_template.xlsx");
+  el("xlsxStatus").style.color = "var(--el-wood)";
+  el("xlsxStatus").textContent = "템플릿을 내려받았어요. 예시 행을 참고해서 아래에 상품을 채워주세요.";
+});
+
+el("xlsxExportBtn").addEventListener("click", () => {
+  if (!products.length) {
+    el("xlsxStatus").style.color = "var(--el-fire)";
+    el("xlsxStatus").textContent = "내보낼 상품이 없어요.";
+    return;
+  }
+  XLSX.writeFile(buildProductSheet(productsToXlsxRows(products)), "ohaeng_products.xlsx");
+  el("xlsxStatus").style.color = "var(--el-wood)";
+  el("xlsxStatus").textContent = "현재 상품 목록을 엑셀로 내려받았어요. 수정 후 다시 불러오기 하면 돼요.";
+});
+
+el("xlsxImportBtn").addEventListener("click", () => el("xlsxFileInput").click());
+
+el("xlsxFileInput").addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const wb = XLSX.read(reader.result, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      const imported = [];
+      let skipped = 0;
+      rows.forEach((r) => {
+        const name = String(r["상품명"] || "").trim();
+        if (!name) { skipped++; return; }
+        let ohang = String(r["오행"] || "").trim();
+        if (!OHANG_VALUES.includes(ohang)) ohang = "목";
+        let category = String(r["카테고리"] || "").trim();
+        if (!CATEGORY_VALUES.includes(category)) category = "생활용품";
+        let theme = String(r["테마"] || "").trim();
+        if (!THEME_VALUES.includes(theme)) theme = "";
+        const price = Number(r["가격"]) || 0;
+        const emoji = String(r["이모지"] || "").trim() || ELEMENT_EMOJI_HINT[ohang] || "🎁";
+        const image = String(r["이미지URL"] || "").trim();
+        const url = String(r["구매링크"] || "").trim();
+        const tags = String(r["태그"] || "").trim();
+        imported.push({ name, ohang, category, theme, price, emoji, image, url, tags });
+      });
+      if (!imported.length) throw new Error("불러올 상품이 없어요 (상품명이 채워져 있는지 확인해주세요)");
+      const addToExisting = products.length
+        ? confirm(imported.length + "개 상품을 찾았어요.\n\n확인: 기존 목록에 추가\n취소: 기존 목록을 통째로 교체")
+        : true;
+      products = addToExisting ? products.concat(imported) : imported;
+      saveProducts();
+      renderList();
+      el("xlsxStatus").style.color = "var(--el-wood)";
+      el("xlsxStatus").textContent =
+        file.name + "에서 " + imported.length + "개 불러왔어요" + (skipped ? " (상품명 없는 " + skipped + "행 제외)" : "") +
+        (addToExisting ? " — 기존 목록에 추가됨." : " — 기존 목록을 교체함.");
+    } catch (err) {
+      el("xlsxStatus").style.color = "var(--el-fire)";
+      el("xlsxStatus").textContent = "엑셀 불러오기에 실패했어요: " + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  e.target.value = "";
 });
 
 resetForm();
